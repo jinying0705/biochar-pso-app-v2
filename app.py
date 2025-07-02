@@ -8,7 +8,7 @@ import streamlit as st
 import pandas as pd
 import json
 import os
-from optimizer import optimize_conditions
+from optimizer import run_pso_optimization  # ✅ 修改函数名
 
 st.set_page_config(page_title="Reverse Optimization for Biochar Properties", layout="wide")
 
@@ -16,7 +16,7 @@ st.set_page_config(page_title="Reverse Optimization for Biochar Properties", lay
 st.markdown("## 🎯 Reverse Optimization for Biochar Properties")
 st.markdown(
     "<div style='color:red; font-size:16px;'>"
-    "Enter biomass properties and assign weights to biochar properties to design the best experiment condition for prepare your ideal biochar.<br>"
+    "Enter biomass properties and assign weights to biochar properties to design the best experiment condition for preparing your ideal biochar.<br>"
     "*This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.*"
     "</div>",
     unsafe_allow_html=True,
@@ -32,14 +32,14 @@ for file in json_files:
     with open(os.path.join(json_folder, file), "r") as f:
         models[file] = json.load(f)
 
-# 加载 excel 数据
+# 加载 Excel 数据
 excel_file = "确定6.0.xlsx"
 sheet_names = pd.ExcelFile(excel_file).sheet_names
 sheet_selection = st.sidebar.selectbox("Choose biomass type", sheet_names)
 data = pd.read_excel(excel_file, sheet_name=sheet_selection)
 
 st.sidebar.markdown("### ⚖️ Assign Weights to Biochar Properties")
-default_weights = [5, 4, 3, 2, 2, 2, 1, 1, 1]  # 可自定义初始权重
+default_weights = [5, 4, 3, 2, 2, 2, 1, 1, 1]
 weights = {}
 properties = [
     "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
@@ -51,12 +51,12 @@ for i, prop in enumerate(properties):
 if st.sidebar.button("Start Optimization"):
     st.success("✅ Optimization started. Please wait...")
 
-    optimized_conditions, predicted_properties = optimize_conditions(
-        biomass_data=data.iloc[0],
-        weights=weights,
-        models=models,
-        num_particles=10,
-        max_iter=10
+    fixed_A_properties = data.iloc[0, 0:7].values.tolist()  # 获取前7项A类特征值
+    weights_list = list(weights.values())
+
+    optimized_conditions, predicted_outputs = run_pso_optimization(  # ✅ 修改函数名
+        fixed_A_properties=fixed_A_properties,
+        weights=weights_list
     )
 
     st.success("✅ Optimization completed!")
@@ -73,11 +73,10 @@ if st.sidebar.button("Start Optimization"):
 
     st.markdown("### 📉 Ideal Biochar Properties")
     cols2 = st.columns(3)
-    for i, (key, value) in enumerate(predicted_properties.items()):
+    for i, (key, value) in enumerate(zip(properties, predicted_outputs)):
         col = cols2[i % 3]
         col.markdown(
             f"<div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#ffffff;'>"
             f"<strong>{key}</strong><br>{value:.2f}</div>",
             unsafe_allow_html=True
         )
-
