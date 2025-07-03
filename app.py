@@ -1,104 +1,63 @@
-# app.py
 import streamlit as st
-import pandas as pd
-import json
-import os
-from optimizer import predict_properties, optimize_conditions
+import numpy as np
+from optimizer import run_pso_optimization
 
-st.set_page_config(page_title="Biochar Prediction and Optimization", layout="wide")
-
-st.markdown("## 🌱 Biochar Property Prediction & Optimization Platform")
+st.set_page_config(page_title="Reverse Optimization for Biochar", layout="wide")
 
 st.markdown("""
-This tool allows you to **predict** biochar properties from biomass and process conditions, or **optimize** process conditions to obtain ideal biochar.  
-Choose the desired mode below:
-""")
+    <h2 style='text-align: center; color: black;'>Reverse Optimization for Biochar Properties</h2>
+    <div style='text-align: center; font-size: 16px; color: #555555;'>
+        Please enter the biomass properties and assign weights to each biochar output property.
+        <br>Click "Run Optimization" to find the best experimental conditions using PSO.
+    </div><br>
+""", unsafe_allow_html=True)
 
-mode = st.radio("Select Function", ["🔍 Predict Biochar Properties", "🎯 Optimize Process Conditions"], horizontal=True)
-st.markdown("---")
-
-# Load Excel data
-excel_file = "确定6.0.xlsx"
-sheet_names = pd.ExcelFile(excel_file).sheet_names
-sheet_selection = st.selectbox("Select Biomass Type", sheet_names)
-data = pd.read_excel(excel_file, sheet_name=sheet_selection)
-biomass_row = data.iloc[0]
-
-# Feature names
-feature_labels = [
+# -------------------- Sidebar: 输入部分 --------------------
+st.sidebar.header("📌 Biomass Properties")
+biomass_labels = [
     "Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
-    "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)",
-    "Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"
+    "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"
 ]
+fixed_properties = []
+for label in biomass_labels:
+    val = st.sidebar.number_input(label, value=0.0)
+    fixed_properties.append(val)
 
-# Output names
+st.sidebar.header("🎯 Output Property Weights")
 output_labels = [
     "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
     "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
 ]
+weights = []
+for label in output_labels:
+    w = st.sidebar.number_input(f"{label} weight", min_value=0, max_value=10, value=1, step=1)
+    weights.append(w)
 
-if mode == "🔍 Predict Biochar Properties":
-    st.markdown("### 🔢 Input Process Conditions")
-    cols = st.columns(3)
-    input_values = []
+# -------------------- 主体区域 --------------------
+if st.sidebar.button("Run Optimization"):
+    with st.spinner("Running PSO optimization, please wait..."):
+        opt_conditions, opt_outputs = run_pso_optimization(fixed_properties, weights)
 
-    for i, label in enumerate(feature_labels):
-        if i < 7:
-            # Use biomass_row for the 7 fixed biomass properties
-            input_values.append(biomass_row[i])
-            cols[i % 3].number_input(label, value=float(biomass_row[i]), disabled=True)
-        else:
-            val = cols[i % 3].number_input(label, min_value=0.0, value=300.0)
-            input_values.append(val)
+    st.success("✅ Optimization Completed!")
 
-    if st.button("Predict"):
-        st.success("✅ Predicting biochar properties...")
-        predictions = predict_properties(input_values)
+    st.markdown("### 🔧 Optimal Experimental Conditions")
+    condition_labels = ["Highest temperature (℃)", "Heating rate (℃/min)", "Residence time (min)"]
+    cols1 = st.columns(3)
+    for i, label in enumerate(condition_labels):
+        cols1[i].markdown(f"""
+            <div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#f4f4f4;'>
+                <strong>{label}</strong><br><span style='font-size:20px;'>{opt_conditions[i]:.2f}</span>
+            </div>
+        """, unsafe_allow_html=True)
 
-        st.markdown("### 📋 Predicted Biochar Properties")
-        cols_out = st.columns(3)
-        for i, label in enumerate(output_labels):
-            cols_out[i % 3].markdown(
-                f"<div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#f9f9f9;'>"
-                f"<strong>{label}</strong><br>{predictions[i]:.2f}</div>",
-                unsafe_allow_html=True
-            )
-
-elif mode == "🎯 Optimize Process Conditions":
-    st.markdown("### ⚖️ Assign Weights to Desired Biochar Properties")
-    default_weights = [5, 4, 3, 2, 2, 2, 1, 1, 1]
-    weight_inputs = []
-    cols_w = st.columns(3)
+    st.markdown("### 📈 Predicted Biochar Properties")
+    cols2 = st.columns(3)
     for i, label in enumerate(output_labels):
-        weight = cols_w[i % 3].number_input(f"{label} weight", min_value=0, max_value=10, value=default_weights[i])
-        weight_inputs.append(weight)
-
-    if st.button("Start Optimization"):
-        st.success("⏳ Optimizing, this may take a few minutes...")
-
-        opt_conditions, opt_outputs = optimize_conditions(
-            fixed_A_properties=biomass_row[:7],
-            weights=weight_inputs
-        )
-
-        st.success("✅ Optimization Completed!")
-
-        st.markdown("### 🛠️ Recommended Process Conditions")
-        cond_labels = feature_labels[7:]
-        cols_cond = st.columns(3)
-        for i, label in enumerate(cond_labels):
-            cols_cond[i].markdown(
-                f"<div style='padding:10px; border:1px solid #ccc; border-radius:10px; background-color:#eef2f5;'>"
-                f"<strong>{label}</strong><br>{opt_conditions[i]:.2f}</div>",
-                unsafe_allow_html=True
-            )
-
-        st.markdown("### 🌟 Expected Biochar Properties")
-        cols_prop = st.columns(3)
-        for i, label in enumerate(output_labels):
-            cols_prop[i % 3].markdown(
-                f"<div style='padding:10px; border:1px solid #ccc; border-radius:10px; background-color:#ffffff;'>"
-                f"<strong>{label}</strong><br>{opt_outputs[i]:.2f}</div>",
-                unsafe_allow_html=True
-            )
+        cols2[i % 3].markdown(f"""
+            <div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#ffffff;'>
+                <strong>{label}</strong><br><span style='font-size:20px;'>{opt_outputs[i]:.2f}</span>
+            </div>
+        """, unsafe_allow_html=True)
+else:
+    st.info("👈 Please fill in the parameters and click 'Run Optimization'.")
 
