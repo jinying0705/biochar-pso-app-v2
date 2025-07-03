@@ -1,7 +1,7 @@
 # app.py
 import streamlit as st
 import pandas as pd
-from optimizer import predict_properties, optimize_conditions
+from optimizer import optimize_conditions
 
 st.set_page_config(page_title="Biochar Prediction & Optimization", layout="wide")
 
