@@ -1,7 +1,8 @@
 # app.py
 import streamlit as st
 import numpy as np
-from optimizer import run_pso_optimization
+from optimizer import optimize_conditions
+
 
 st.set_page_config(page_title="Biochar Prediction & Optimization", layout="wide")
 
