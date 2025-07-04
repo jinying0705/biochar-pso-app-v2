@@ -1,84 +1,99 @@
+# app.py
 import streamlit as st
 import numpy as np
-from optimizer import optimize_conditions, predict_properties
+from optimizer import run_pso_optimization
 
-# ---------- 页面设置 ----------
 st.set_page_config(page_title="Biochar Prediction & Optimization", layout="wide")
 
-# ---------- 页面标题和说明 ----------
-st.markdown(
-    """
-    <h1 style='font-size:36px; margin-bottom:10px;'>🌱 Biochar Property Prediction & Optimization</h1>
-    <p style='font-size:18px;'>
-    This platform predicts biochar properties from biomass and process conditions, and optimizes experimental parameters to achieve ideal biochar performance.
+# ------------------- Title Section -------------------
+st.markdown("""
+    <h1 style='text-align: center; font-size: 32px;'>🌱 Biochar Property Prediction & Optimization</h1>
+    <p style='text-align: center; font-size: 18px;'>
+    This platform predicts biochar properties from biomass and process parameters,  
+    and also optimizes experimental conditions to meet desired biochar performance.
     </p>
-    <p style='font-size:16px; color:gray;'>
-    <strong>Note:</strong> Optimization may take 5–10 minutes depending on computational load.
-    </p>
-    """,
-    unsafe_allow_html=True
-)
+    <hr>
+""", unsafe_allow_html=True)
 
-# ---------- 第一部分：输入 A 的性质 ----------
+# ------------------- Biomass A Input -------------------
 st.subheader("🧪 Biomass A Properties")
-biomass_labels = ["Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
-                  "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"]
+biomass_labels = ["Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", 
+                  "Carbon (%)", "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"]
 biomass_inputs = []
-cols = st.columns(len(biomass_labels))
+cols_biomass = st.columns(len(biomass_labels))
 for i, label in enumerate(biomass_labels):
-    val = cols[i].number_input(label, value=0.0, format="%.2f")
+    val = cols_biomass[i].number_input(label, value=0.0, format="%.2f")
     biomass_inputs.append(val)
 
-# ---------- 第二部分：预测与优化并排 ----------
+# ------------------- Split Columns for Predict & Optimize -------------------
 left_col, right_col = st.columns(2)
 
-# ---------- 左侧：正向预测 ----------
+# -------- Left Column: Forward Prediction --------
 with left_col:
     st.subheader("🔍 Forward Prediction")
+
     temp = st.number_input("Highest temperature (°C)", value=300.0, format="%.2f")
     rate = st.number_input("Heating rate (°C/min)", value=10.0, format="%.2f")
     time = st.number_input("Residence time (min)", value=30.0, format="%.2f")
 
     if st.button("Predict"):
-        prediction_inputs = biomass_inputs + [temp, rate, time]
-        pred_outputs = predict_properties(prediction_inputs)
+        def predict_properties(inputs):
+            import pandas as pd
+            from sklearn.preprocessing import StandardScaler
+            from xgboost import XGBRegressor
 
-        st.success("✅ Prediction completed!")
-        st.subheader("📊 Predicted Biochar Properties")
-        output_props = [
+            X = pd.read_excel("确定6.0.xlsx").iloc[:, 0:10].values
+            scaler = StandardScaler().fit(X)
+
+            input_scaled = scaler.transform([inputs])
+            results = []
+
+            for i in range(9):  # 9 output models
+                model = XGBRegressor()
+                model.load_model(f"M-XGB_{i+1}.json")
+                pred = model.predict(input_scaled)[0]
+                results.append(pred)
+            return results
+
+        pred_inputs = biomass_inputs + [temp, rate, time]
+        pred_outputs = predict_properties(pred_inputs)
+
+        st.success("✅ Prediction Completed")
+        pred_labels = [
             "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
             "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
         ]
-        cols_pred = st.columns(3)
-        for i, (label, value) in enumerate(zip(output_props, pred_outputs)):
-            cols_pred[i % 3].metric(label, f"{value:.2f}")
+        pred_cols = st.columns(3)
+        for i, (label, value) in enumerate(zip(pred_labels, pred_outputs)):
+            pred_cols[i % 3].metric(label, f"{value:.2f}")
 
-# ---------- 右侧：逆向优化 ----------
+# -------- Right Column: Reverse Optimization --------
 with right_col:
     st.subheader("🎯 Reverse Optimization")
-    output_props = [
+
+    weight_labels = [
         "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
         "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
     ]
     weights = []
-    cols_opt = st.columns(3)
-    for i, label in enumerate(output_props):
-        weight = cols_opt[i % 3].number_input(f"{label} weight", min_value=0, max_value=10, value=1)
-        weights.append(weight)
+    cols_weights = st.columns(3)
+    for i, label in enumerate(weight_labels):
+        val = cols_weights[i % 3].number_input(f"{label} weight", value=1, step=1)
+        weights.append(val)
 
     if st.button("Optimize"):
-        st.warning("⏳ Running optimization... Please wait.")
-        opt_conditions, opt_outputs = optimize_conditions(biomass_inputs, weights)
+        with st.spinner("⏳ Optimizing using PSO..."):
+            best_conditions, best_outputs = run_pso_optimization(biomass_inputs, weights)
 
-        st.success("✅ Optimization completed!")
-        st.subheader("🔧 Optimal Experimental Conditions")
-        opt_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
-        opt_cols = st.columns(3)
-        for i, val in enumerate(opt_conditions):
-            opt_cols[i].metric(opt_labels[i], f"{val:.2f}")
+        st.success("✅ Optimization Completed")
 
-        st.subheader("📈 Predicted Biochar Properties from Optimal Conditions")
-        opt_out_cols = st.columns(3)
-        for i, (label, value) in enumerate(zip(output_props, opt_outputs)):
-            opt_out_cols[i % 3].metric(label, f"{value:.2f}")
+        st.markdown("#### 🔧 Optimal Experimental Conditions")
+        condition_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
+        cond_cols = st.columns(3)
+        for i, val in enumerate(best_conditions):
+            cond_cols[i].metric(condition_labels[i], f"{val:.2f}")
 
+        st.markdown("#### 📈 Predicted Biochar Properties")
+        output_cols = st.columns(3)
+        for i, (label, val) in enumerate(zip(weight_labels, best_outputs)):
+            output_cols[i % 3].metric(label, f"{val:.2f}")
