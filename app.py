@@ -1,86 +1,120 @@
 import streamlit as st
 import numpy as np
-from optimizer import predict_properties, optimize_conditions
+import pandas as pd
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+from optimizer import optimize_conditions, predict_properties
 
-# 页面配置
 st.set_page_config(page_title="Biochar Prediction & Optimization", layout="wide")
 
-# 标题与说明
-st.markdown("<h1>🌱 Biochar Property Prediction & Optimization</h1>", unsafe_allow_html=True)
-st.markdown(
-    "<p style='font-size:18px'>This platform predicts biochar properties from biomass and process parameters, "
-    "and also optimizes experimental conditions to meet desired biochar performance.</p>", 
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<span style='color:red; font-size:15px;'>*This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.</span>", 
-    unsafe_allow_html=True
-)
+# ----------------------------
+# Load Data, Scalers, Models
+# ----------------------------
+@st.cache_data
+def load_data_and_scalers():
+    data = pd.read_excel("确定6.0.xlsx")
+    X = data.iloc[:, 0:10].values
+    y = data.iloc[:, 10:19].values
+    scaler_X = StandardScaler().fit(X)
+    scalers_y = [StandardScaler().fit(y[:, i].reshape(-1, 1)) for i in range(y.shape[1])]
+    return data, scaler_X, scalers_y
 
-# 输入生物质属性
-st.subheader("🧪 Biomass A Properties")
-biomass_labels = ["Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)", 
-                  "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"]
-biomass_inputs = []
-cols = st.columns(7)
-for i, label in enumerate(biomass_labels):
-    val = cols[i].number_input(label, value=0.0, format="%.2f")
-    biomass_inputs.append(val)
+@st.cache_resource
+def load_models():
+    models = []
+    for i in range(9):
+        model = xgb.XGBRegressor()
+        model.load_model(f"M-XGB_{i+1}.json")
+        models.append(model)
+    return models
 
-# 正向预测与逆向优化 左右并列
+data, scaler_X, scalers_y = load_data_and_scalers()
+models = load_models()
+
+# ----------------------------
+# 页面标题与说明
+# ----------------------------
+st.markdown("<h1 style='text-align: center;'>🌱 Biochar Property Prediction & Optimization</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='text-align: center; font-size: 16px;'>"
+    "This platform predicts biochar properties from biomass and process parameters, and also optimizes experimental conditions to meet desired biochar performance."
+    "</div><br>", unsafe_allow_html=True)
+
+# ----------------------------
+# 左右两列结构
+# ----------------------------
 left_col, right_col = st.columns(2)
 
-# ---------- 左侧：正向预测 ----------
+# ----------------------------
+# 左侧：正向预测模块
+# ----------------------------
 with left_col:
     st.subheader("🔍 Forward Prediction")
-    temp = st.number_input("Highest temperature (°C)", value=300.0, format="%.2f")
-    rate = st.number_input("Heating rate (°C/min)", value=10.0, format="%.2f")
-    time = st.number_input("Residence time (min)", value=30.0, format="%.2f")
+
+    input_labels = [
+        "Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
+        "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)",
+        "Highest temperature (℃)", "Heating rate (℃/min)", "Residence time (min)"
+    ]
+    input_values = []
+    for label in input_labels:
+        val = st.number_input(label, value=0.0, format="%.2f")
+        input_values.append(val)
 
     if st.button("Predict"):
-        prediction_inputs = biomass_inputs + [temp, rate, time]
-        pred_outputs = predict_properties(prediction_inputs)
+        with st.spinner("Predicting..."):
+            pred_results = predict_properties(input_values)
+            st.success("✅ Prediction completed!")
 
-        st.success("✅ Prediction completed!")
-        st.subheader("📊 Predicted Biochar Properties")
-        pred_props = [
-            "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
-            "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
-        ]
-        pred_cols = st.columns(3)
-        for i, (k, v) in enumerate(zip(pred_props, pred_outputs)):
-            pred_cols[i % 3].metric(k, f"{v:.2f}")
+            output_labels = [
+                "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
+                "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
+            ]
+            st.markdown("### 🔍 Predicted Biochar Properties")
+            cols = st.columns(3)
+            for i, val in enumerate(pred_results):
+                with cols[i % 3]:
+                    st.markdown(f"<div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#f9f9f9;'><b>{output_labels[i]}</b><br><span style='font-size:20px;'>{val:.2f}</span></div>", unsafe_allow_html=True)
 
-# ---------- 右侧：逆向优化 ----------
+# ----------------------------
+# 右侧：逆向优化模块
+# ----------------------------
 with right_col:
-    st.subheader("🎯 Reverse Optimization for Biochar Properties")
-    st.markdown(
-        "<p style='font-size:16px'>Enter biomass properties and assign weights to biochar properties to "
-        "design the best experiment condition for preparing your ideal biochar.</p>",
-        unsafe_allow_html=True
-    )
+    st.subheader("🎯 Reverse Optimization")
+    st.markdown("*This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.*", unsafe_allow_html=True)
 
-    # 权重输入
-    weights = {}
-    opt_props = [
+    st.markdown("#### ✏️ Enter Biomass Properties")
+    biomass_labels = [
+        "Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
+        "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"
+    ]
+    fixed_props = []
+    for label in biomass_labels:
+        val = st.number_input(label, key=f"opt_{label}", value=0.0, format="%.2f")
+        fixed_props.append(val)
+
+    st.markdown("#### ⚖️ Assign Weights to Biochar Properties")
+    opt_labels = [
         "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
         "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
     ]
-    opt_cols = st.columns(3)
-    for i, prop in enumerate(opt_props):
-        weights[prop] = opt_cols[i % 3].number_input(f"{prop} weight", value=1, step=1)
+    weights = []
+    for label in opt_labels:
+        val = st.number_input(f"{label} weight", min_value=0, value=1, step=1, format="%d")
+        weights.append(val)
 
     if st.button("Optimize"):
-        opt_conditions, opt_outputs = optimize_conditions(biomass_inputs, list(weights.values()))
+        with st.spinner("Running PSO optimization..."):
+            opt_conditions, pred_outputs = optimize_conditions(fixed_props, weights)
+            st.success("✅ Optimization completed!")
 
-        st.success("✅ Optimization completed!")
-        st.subheader("🔧 Optimized Experimental Conditions")
-        opt_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
-        opt_result_cols = st.columns(3)
-        for i, val in enumerate(opt_conditions):
-            opt_result_cols[i].metric(opt_labels[i], f"{val:.2f}")
+            st.markdown("### 🔧 Optimized Experimental Conditions")
+            condition_labels = ["Highest temperature (℃)", "Heating rate (℃/min)", "Residence time (min)"]
+            cols1 = st.columns(3)
+            for i, val in enumerate(opt_conditions):
+                cols1[i].markdown(f"<div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#f4f4f4;'><b>{condition_labels[i]}</b><br><span style='font-size:20px;'>{val:.2f}</span></div>", unsafe_allow_html=True)
 
-        st.subheader("🎯 Ideal Biochar Properties")
-        opt_output_cols = st.columns(3)
-        for i, (key, value) in enumerate(zip(opt_props, opt_outputs)):
-            opt_output_cols[i % 3].metric(key, f"{value:.2f}")
+            st.markdown("### 🎯 Ideal Biochar Properties")
+            cols2 = st.columns(3)
+            for i, val in enumerate(pred_outputs):
+                cols2[i % 3].markdown(f"<div style='padding:10px; border:1px solid #ddd; border-radius:10px; background-color:#f9f9f9;'><b>{opt_labels[i]}</b><br><span style='font-size:20px;'>{val:.2f}</span></div>", unsafe_allow_html=True)
