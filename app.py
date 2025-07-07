@@ -9,10 +9,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("### 🧪 Biomass Properties & Pyrolysis Conditions")
+# 页面左右分栏
+left_col, right_col = st.columns(2)
 
-# 生物质属性输入框（全部放在一行）
-with st.container():
+# ==== 左侧：所有输入，包括生物质和热解参数 ====
+with left_col:
+    st.markdown("### 🎯 Biomass Properties & Pyrolysis Conditions")
+
     cols = st.columns(7)
     biomass_inputs = {}
     labels = ["Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
@@ -20,13 +23,7 @@ with st.container():
     for col, label in zip(cols, labels):
         biomass_inputs[label] = col.number_input(label, min_value=0.0, max_value=100.0, value=0.0)
 
-# 页面左右分栏
-left_col, right_col = st.columns(2)
-
-# ==== 左侧：Forward Prediction ====
-with left_col:
-    st.markdown("### 🎯 Forward Prediction")
-    st.markdown("Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.")
+    st.write("Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.")
 
     highest_temp = st.number_input("Highest temperature (°C)", min_value=0.0, max_value=1000.0, value=300.0)
     heating_rate = st.number_input("Heating rate (°C/min)", min_value=0.0, max_value=100.0, value=10.0)
@@ -38,7 +35,7 @@ with left_col:
         st.subheader("📋 Ideal Biochar Properties")
         st.write(outputs)
 
-# ==== 右侧：Reverse Optimization ====
+# ==== 右侧：优化权重输入 ====
 with right_col:
     st.markdown("### 🔍 Reverse Optimization")
     st.markdown("Enter the biomass properties above and assign weights to the biochar properties below to design optimal experimental conditions for preparing your ideal biochar.")
@@ -65,3 +62,4 @@ st.markdown(
     "<i>Note: This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.</i>",
     unsafe_allow_html=True,
 )
+
