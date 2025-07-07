@@ -4,7 +4,12 @@ from optimizer import predict_properties, optimize_conditions
 
 st.set_page_config(page_title="Biochar Design", layout="wide")
 
-st.markdown("<h1 style='font-size: 28px;'>🌱 The multi-task learning model used to predict the properties and customize the design of biochar</h1>", unsafe_allow_html=True)
+st.markdown("""
+<div style='text-align: center; font-size: 34px; padding: 10px 0; font-weight: bold;'>
+    🌱 The multi-task learning model used to predict the properties and customize the design of biochar
+</div>
+""", unsafe_allow_html=True)
+
 
 st.markdown("<h3>🧪 Biomass Properties & Pyrolysis Conditions</h3>", unsafe_allow_html=True)
 
@@ -55,11 +60,11 @@ with col1:
 
 # ✅ 右边：Reverse Optimization
 with col2:
+
     st.markdown("### 🔍 Reverse Optimization")
-    st.markdown("*This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.*")
-
     st.markdown("Enter the biomass properties above and assign weights to the biochar properties below to design optimal experimental conditions for preparing your ideal biochar.")
-
+    st.markdown("*This reverse optimization process requires significant computation and may take 1 to 5 minutes. Please wait patiently.*")
+    
     weight_labels = [
         "Yield (%) weight", "pH weight", "Ash (%) weight",
         "Volatile matter (%) weight", "Nitrogen (%) weight", "Fixed carbon (%) weight",
@@ -73,8 +78,40 @@ with col2:
             label = weight_labels[i + j]
             input_weights[label] = row[j].number_input(label, value=1.0, step=0.1)
 
-    if st.button("Optimize"):
-        biomass_inputs = [ash, volatile_matter, fixed_carbon, carbon, hydrogen, oxygen, nitrogen]
-        optimal_conditions = optimize_conditions(biomass_inputs, input_weights)
-        st.subheader("Optimized Experimental Conditions")
-        st.write(optimal_conditions)
+if st.button("Optimize"):
+    biomass_inputs = [ash, volatile_matter, fixed_carbon, carbon, hydrogen, oxygen, nitrogen]
+    weights_list = list(input_weights.values())
+
+    opt_conditions, predicted_outputs = optimize_conditions(biomass_inputs, weights_list)
+
+    st.markdown("### 🧪 Optimized Experimental Conditions")
+
+    cond_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
+    prop_labels = [
+        "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)",
+        "Nitrogen (%)", "Fixed carbon (%)", "Carbon (%)",
+        "H/C ratio", "O/C ratio"
+    ]
+
+    styled_opt_conditions = ""
+    for label, value in zip(cond_labels, opt_conditions):
+        styled_opt_conditions += f"""
+        <div style="padding:8px 14px; margin:5px 0; background-color:#f0f9ff;
+                    border-left: 5px solid #2196F3; font-size:15px;">
+            <b>{label}</b>: {value:.2f}
+        </div>
+        """
+    st.markdown(styled_opt_conditions, unsafe_allow_html=True)
+
+    st.markdown("### 🧾 Ideal Biochar Properties")
+
+    styled_pred_output = ""
+    for label, value in zip(prop_labels, predicted_outputs):
+        styled_pred_output += f"""
+        <div style="padding:8px 14px; margin:5px 0; background-color:#f9f9f9;
+                    border-left: 5px solid #4CAF50; font-size:15px;">
+            <b>{label}</b>: {value:.2f}
+        </div>
+        """
+    st.markdown(styled_pred_output, unsafe_allow_html=True)
+
