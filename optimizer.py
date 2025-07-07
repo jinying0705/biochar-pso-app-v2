@@ -6,8 +6,8 @@ from pyswarm import pso
 
 # ======= Step 1: Load training data =======
 _data = pd.read_excel("确定6.0.xlsx")
-X = _data.iloc[:, 0:10].values  # 10个输入变量
-y = _data.iloc[:, 10:19].values  # 9个输出变量
+X = _data.iloc[:, 0:10].values
+y = _data.iloc[:, 10:19].values
 
 # ======= Step 2: Standardize input & output =======
 scaler_X = StandardScaler().fit(X)
@@ -36,12 +36,8 @@ output_limits = [
     (0, 1.29)        # O/C ratio
 ]
 
-# ======= Step 5: 正向预测函数（10维输入） =======
+# ======= Step 5: 正向预测函数 =======
 def predict_properties(input_features):
-    """
-    Predict biochar properties based on all 10 input features.
-    input_features: [ash, vm, fc, c, h, o, n, temp, rate, time]
-    """
     input_scaled = scaler_X.transform([input_features])
     outputs = []
     for model, scaler in zip(models, scalers_y):
@@ -52,11 +48,7 @@ def predict_properties(input_features):
 
 # ======= Step 6: PSO目标函数（带惩罚） =======
 def objective_function(conditions, fixed_A_properties, weights):
-    """
-    PSO目标函数：输入待优化条件（3个）+ 固定的A属性（7个） + 权重列表（9个）
-    输出为负加权得分（因为PSO是最小化问题）
-    """
-    full_input = np.hstack((fixed_A_properties, conditions))  # 补全为10维
+    full_input = np.hstack((fixed_A_properties, conditions))
     input_scaled = scaler_X.transform([full_input])
 
     score = 0
@@ -64,33 +56,25 @@ def objective_function(conditions, fixed_A_properties, weights):
         pred_scaled = model.predict(input_scaled)
         pred = scaler.inverse_transform(pred_scaled.reshape(-1, 1))[0][0]
 
-        # 超出预测范围就强烈惩罚
         if pred < output_limits[i][0] or pred > output_limits[i][1]:
             return 1e6
 
-        score += weight * pred
-    return -score  # PSO是最小化问题，我们要最大化目标函数
+        score += float(weight) * pred  # 显式转为float
+    return -score
 
-# ======= Step 7: PSO求最优工艺条件 =======
-def optimize_conditions(fixed_A_properties, weights):
-    """
-    fixed_A_properties: list of 7 biomass properties
-    weights: list of 9 output weights
-    Return: 最优条件 [temp, rate, time], 对应预测的biochar属性
-    """
-    lb = [200, 1, 0]      # temp, rate, time 下界
-    ub = [1000, 50, 240]  # 上界
+# ======= Step 7: PSO优化 =======
+def optimize_conditions(fixed_A_properties, weight_dict):
+    weights = list(weight_dict.values())
+    weights = [float(w) for w in weights]  # 显式转为float
 
-    print("Running PSO optimization...")
-    print("Input A properties:", fixed_A_properties)
-    print("Target weights:", weights)
+    lb = [200, 1, 0]
+    ub = [1000, 50, 240]
 
     opt_conditions, _ = pso(
         lambda c: objective_function(c, fixed_A_properties, weights),
         lb, ub, swarmsize=50, maxiter=50
     )
 
-    # 得到预测输出
     full_input = np.hstack((fixed_A_properties, opt_conditions))
     input_scaled = scaler_X.transform([full_input])
 
@@ -100,4 +84,21 @@ def optimize_conditions(fixed_A_properties, weights):
         pred = scaler.inverse_transform(pred_scaled.reshape(-1, 1))[0][0]
         outputs.append(pred)
 
-    return opt_conditions, outputs
+    output_labels = [
+        "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)",
+        "Nitrogen (%)", "Fixed carbon (%)", "Carbon (%)",
+        "H/C ratio", "O/C ratio"
+    ]
+
+    results = {
+        "Optimal Conditions": {
+            "Highest temperature (°C)": round(opt_conditions[0], 2),
+            "Heating rate (°C/min)": round(opt_conditions[1], 2),
+            "Residence time (min)": round(opt_conditions[2], 2)
+        },
+        "Predicted Biochar Properties": {
+            label: round(value, 2) for label, value in zip(output_labels, outputs)
+        }
+    }
+
+    return results
