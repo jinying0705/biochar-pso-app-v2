@@ -15,7 +15,7 @@ st.markdown("""
 st.markdown("<h3>🧪 Biomass Properties (Dry Basis)</h3>", unsafe_allow_html=True)
 
 input_cols = st.columns(7)
-ash = input_cols[0].number_input("Ash (%)", min_value=10, step=0.01)
+ash = input_cols[0].number_input("Ash (%)", min_value=10.0, step=0.01)
 volatile_matter = input_cols[1].number_input("Volatile matter (%)", min_value=0.0, step=0.01)
 fixed_carbon = input_cols[2].number_input("Fixed carbon (%)", min_value=0.0, step=0.01)
 carbon = input_cols[3].number_input("Carbon (%)", min_value=0.0, step=0.01)
