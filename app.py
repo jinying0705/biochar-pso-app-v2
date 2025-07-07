@@ -31,7 +31,7 @@ with col1:
     st.markdown("### 🎯 Forward Prediction")
     st.markdown("Enter the biomass properties above and pyrolysis conditions below to view the predicted biochar properties.")
 
-    highest_temp = st.number_input("Highest temperature (°C)", value=100, step=1.0)
+    highest_temp = st.number_input("Highest temperature (°C)", value=100.0, step=1.0)
     heating_rate = st.number_input("Heating rate (°C/min)", value=0.0, step=1.0)
     residence_time = st.number_input("Residence time (min)", value=0.0, step=1.0)
 
