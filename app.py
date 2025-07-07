@@ -8,7 +8,7 @@ st.markdown("<h1 style='font-size: 28px;'>🌱 The multi-task learning model use
 
 st.markdown("<h3>🧪 Biomass Properties & Pyrolysis Conditions</h3>", unsafe_allow_html=True)
 
-# 第一行输入，7个基础性质
+# 第一行输入：7个基础性质
 input_cols = st.columns(7)
 ash = input_cols[0].number_input("Ash (%)", min_value=0.0, step=0.01)
 volatile_matter = input_cols[1].number_input("Volatile matter (%)", min_value=0.0, step=0.01)
@@ -18,18 +18,17 @@ hydrogen = input_cols[4].number_input("Hydrogen (%)", min_value=0.0, step=0.01)
 oxygen = input_cols[5].number_input("Oxygen (%)", min_value=0.0, step=0.01)
 nitrogen = input_cols[6].number_input("Nitrogen (%)", min_value=0.0, step=0.01)
 
-# 主体左右两列
+# 分为左右两列
 col1, col2 = st.columns(2)
 
-# 👉 左边：Forward Prediction
+# ✅ 左边：Forward Prediction（竖排三个输入框）
 with col1:
     st.markdown("### 🎯 Forward Prediction")
-    st.markdown("Enter the biomass properties above and pyrolysis conditions below to view the predicted biochar properties.")
+    st.markdown("Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.")
 
-    pyro_cols = st.columns(3)
-    highest_temp = pyro_cols[0].number_input("Highest temperature (°C)", value=300.0, step=1.0)
-    heating_rate = pyro_cols[1].number_input("Heating rate (°C/min)", value=10.0, step=0.1)
-    residence_time = pyro_cols[2].number_input("Residence time (min)", value=30.0, step=1.0)
+    highest_temp = st.number_input("Highest temperature (°C)", value=300.0, step=1.0)
+    heating_rate = st.number_input("Heating rate (°C/min)", value=10.0, step=0.1)
+    residence_time = st.number_input("Residence time (min)", value=30.0, step=1.0)
 
     if st.button("Predict"):
         fwd_inputs = [ash, volatile_matter, fixed_carbon, carbon, hydrogen, oxygen,
@@ -54,7 +53,7 @@ with col1:
             """
         st.markdown(styled_output, unsafe_allow_html=True)
 
-# 👉 右边：Reverse Optimization
+# ✅ 右边：Reverse Optimization
 with col2:
     st.markdown("### 🔍 Reverse Optimization")
     st.markdown("*This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.*")
