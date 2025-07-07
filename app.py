@@ -24,7 +24,7 @@ col1, col2 = st.columns(2)
 # ✅ 左边：Forward Prediction（竖排三个输入框）
 with col1:
     st.markdown("### 🎯 Forward Prediction")
-    st.markdown("Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.")
+    st.markdown("Enter the biomass properties above and pyrolysis conditions below to view the predicted biochar properties.")
 
     highest_temp = st.number_input("Highest temperature (°C)", value=300.0, step=1.0)
     heating_rate = st.number_input("Heating rate (°C/min)", value=10.0, step=0.1)
