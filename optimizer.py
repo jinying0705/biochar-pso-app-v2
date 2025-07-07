@@ -23,7 +23,7 @@ for i in range(y.shape[1]):
     except Exception as e:
         raise RuntimeError(f"Failed to load model M-XGB_{i+1}.json: {e}")
 
-# ======= Step 4: Define output valid range =======
+# ======= Step 4: Define output valid range for penalty =======
 output_limits = [
     (18.8, 98.22),   # Yield (%)
     (4.1, 13.66),    # pH
@@ -43,10 +43,10 @@ def predict_properties(input_features):
     for model, scaler in zip(models, scalers_y):
         pred_scaled = model.predict(input_scaled)
         pred = scaler.inverse_transform(pred_scaled.reshape(-1, 1))[0][0]
-        outputs.append(float(pred))
+        outputs.append(pred)
     return outputs
 
-# ======= Step 6: PSO目标函数 =======
+# ======= Step 6: PSO目标函数（带惩罚） =======
 def objective_function(conditions, fixed_A_properties, weights):
     full_input = np.hstack((fixed_A_properties, conditions))
     input_scaled = scaler_X.transform([full_input])
@@ -59,12 +59,12 @@ def objective_function(conditions, fixed_A_properties, weights):
         if pred < output_limits[i][0] or pred > output_limits[i][1]:
             return 1e6
 
-        score += float(weight) * float(pred)
+        score += float(weight) * pred
     return -score
 
-# ======= Step 7: 逆向优化函数，返回格式化 HTML =======
-def optimize_conditions(fixed_A_properties, weight_dict):
-    weights = [float(w) for w in weight_dict.values()]
+# ======= Step 7: PSO优化 =======
+def optimize_conditions(fixed_A_properties, weights):  # ← weights 是 list 类型
+    weights = [float(w) for w in weights]  # ✅ 明确转 float
 
     lb = [200, 1, 0]
     ub = [1000, 50, 240]
@@ -81,36 +81,7 @@ def optimize_conditions(fixed_A_properties, weight_dict):
     for model, scaler in zip(models, scalers_y):
         pred_scaled = model.predict(input_scaled)
         pred = scaler.inverse_transform(pred_scaled.reshape(-1, 1))[0][0]
-        outputs.append(float(pred))
+        outputs.append(pred)
 
-    # ======= 格式化 HTML 输出 =======
-    output_labels = [
-        "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)",
-        "Nitrogen (%)", "Fixed carbon (%)", "Carbon (%)",
-        "H/C ratio", "O/C ratio"
-    ]
+    return list(map(float, opt_conditions)), list(map(float, outputs))  # ✅ 显式返回 float 类型
 
-    styled_html = ""
-
-    # Optimal Conditions
-    styled_html += "<h4>🧪 Optimal Conditions</h4>"
-    condition_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
-    for label, val in zip(condition_labels, opt_conditions):
-        styled_html += f"""
-        <div style="padding:8px 14px; margin:5px 0; background-color:#eef9ff;
-                    border-left: 5px solid #2196F3; font-size:15px;">
-            <b>{label}</b>: {float(val):.2f}
-        </div>
-        """
-
-    # Predicted Biochar Properties
-    styled_html += "<h4>🌟 Predicted Biochar Properties</h4>"
-    for label, val in zip(output_labels, outputs):
-        styled_html += f"""
-        <div style="padding:8px 14px; margin:5px 0; background-color:#f9f9f9;
-                    border-left: 5px solid #4CAF50; font-size:15px;">
-            <b>{label}</b>: {float(val):.2f}
-        </div>
-        """
-
-    return styled_html
