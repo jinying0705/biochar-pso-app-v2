@@ -1,88 +1,80 @@
 import streamlit as st
 import numpy as np
-from optimizer import optimize_conditions, predict_properties
+from optimizer import predict_properties, optimize_conditions
 
-# ---------- 页面配置 ----------
-st.set_page_config(page_title="Reverse Optimization for Biochar Properties", layout="wide")
+st.set_page_config(layout="wide")
 
-# ---------- 页面主标题 ----------
-st.markdown("<h1 style='font-size:28px;'>The multi-task learning model used to predict the properties and customize the design of biochar</h1>", unsafe_allow_html=True)
+st.markdown("## 🌱 The multi-task learning model used to predict the properties and customize the design of biochar")
 
-# ---------- 输入部分 ----------
-st.subheader("🧪 Biomass Properties & Pyrolysis Conditions")
+col_input = st.columns(7)
+ash = col_input[0].number_input("Ash (%)", min_value=0.0, value=0.0, step=0.01)
+vol = col_input[1].number_input("Volatile matter (%)", min_value=0.0, value=0.0, step=0.01)
+fix = col_input[2].number_input("Fixed carbon (%)", min_value=0.0, value=0.0, step=0.01)
+c = col_input[3].number_input("Carbon (%)", min_value=0.0, value=0.0, step=0.01)
+h = col_input[4].number_input("Hydrogen (%)", min_value=0.0, value=0.0, step=0.01)
+o = col_input[5].number_input("Oxygen (%)", min_value=0.0, value=0.0, step=0.01)
+n = col_input[6].number_input("Nitrogen (%)", min_value=0.0, value=0.0, step=0.01)
 
-biomass_labels = [
-    "Ash (%)", "Volatile matter (%)", "Fixed carbon (%)", "Carbon (%)",
-    "Hydrogen (%)", "Oxygen (%)", "Nitrogen (%)"
-]
-biomass_inputs = []
-cols = st.columns(len(biomass_labels))
-for i, label in enumerate(biomass_labels):
-    biomass_inputs.append(cols[i].number_input(label, value=0.0, format="%.2f", key=f"bio_{i}"))
+st.markdown("### 🔬 Biomass Properties & Pyrolysis Conditions")
 
-# ---------- 左右并排：预测 与 反向优化 ----------
-left_col, right_col = st.columns(2)
+left, right = st.columns(2)
 
-# ---------- 🎯 Forward Prediction ----------
-with left_col:
-    st.subheader("🎯 Forward Prediction")
-    st.markdown(
-        "<p style='font-size:16px;'>Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.</p>",
-        unsafe_allow_html=True
-    )
-
-    temp = st.number_input("Highest temperature (°C)", value=300.0, format="%.2f", key="temp")
-    rate = st.number_input("Heating rate (°C/min)", value=10.0, format="%.2f", key="rate")
-    time = st.number_input("Residence time (min)", value=30.0, format="%.2f", key="time")
+with left:
+    st.markdown("### 🎯 Forward Prediction")
+    st.write("Please enter 10 biomass-related properties above and click Predict to view the predicted biochar characteristics.")
+    temp = st.number_input("Highest temperature (°C)", min_value=0.0, value=300.0, step=1.0)
+    rate = st.number_input("Heating rate (°C/min)", min_value=0.0, value=10.0, step=0.1)
+    time = st.number_input("Residence time (min)", min_value=0.0, value=30.0, step=1.0)
 
     if st.button("Predict"):
-        input_features = biomass_inputs + [temp, rate, time]
-        predictions = predict_properties(input_features)
+        fwd_inputs = [ash, vol, fix, c, h, o, n, temp, rate, time]
+        try:
+            outputs = predict_properties(fwd_inputs)
+            st.subheader("🔍 Predicted Biochar Properties")
+            for name, value in zip([
+                "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
+                "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
+            ], outputs):
+                st.write(f"**{name}:** {value:.2f}")
+        except Exception as e:
+            st.error(f"Prediction failed: {e}")
 
-        st.success("✅ Prediction completed!")
-        st.subheader("📊 Predicted Biochar Properties")
-        pred_props = [
-            "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
-            "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
-        ]
-        pred_cols = st.columns(3)
-        for i, (key, val) in enumerate(zip(pred_props, predictions)):
-            pred_cols[i % 3].metric(key, f"{val:.2f}")
+with right:
+    st.markdown("### 🔎 Reverse Optimization")
+    st.write("Enter the biomass properties above and assign weights to the biochar properties below to design optimal experimental conditions for preparing your ideal biochar.")
 
-# ---------- 🔍 Reverse Optimization ----------
-with right_col:
-    st.subheader("🔍 Reverse Optimization")
-    st.markdown(
-        "<p style='font-size:16px;'>Enter the biomass properties above and assign weights to the biochar properties below to design optimal experimental conditions for preparing your ideal biochar.</p>",
-        unsafe_allow_html=True
-    )
-
-    weights = {}
-    opt_props = [
-        "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
-        "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
+    weight_names = [
+        "Yield (%) weight", "pH weight", "Ash (%) weight",
+        "Volatile matter (%) weight", "Nitrogen (%) weight",
+        "Fixed carbon (%) weight", "Carbon (%) weight",
+        "H/C ratio weight", "O/C ratio weight"
     ]
+    weights = []
     weight_cols = st.columns(3)
-    for i, prop in enumerate(opt_props):
-        weights[prop] = weight_cols[i % 3].number_input(f"{prop} weight", value=1, step=1, key=f"w_{i}")
+    for i, name in enumerate(weight_names):
+        with weight_cols[i % 3]:
+            w = st.number_input(name, min_value=0.0, value=1.0, step=0.1)
+            weights.append(w)
 
     if st.button("Optimize"):
-        opt_conditions, opt_outputs = optimize_conditions(biomass_inputs, list(weights.values()))
+        try:
+            fixed_props = [ash, vol, fix, c, h, o, n]
+            opt_conditions, opt_outputs = optimize_conditions(fixed_props, weights)
+            st.subheader("⚙️ Optimal Experimental Conditions")
+            st.write(f"**Highest temperature (°C):** {opt_conditions[0]:.2f}")
+            st.write(f"**Heating rate (°C/min):** {opt_conditions[1]:.2f}")
+            st.write(f"**Residence time (min):** {opt_conditions[2]:.2f}")
 
-        st.success("✅ Optimization completed!")
-        st.subheader("🔧 Optimal Experimental Conditions")
-        cond_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
-        cond_cols = st.columns(3)
-        for i, val in enumerate(opt_conditions):
-            cond_cols[i].metric(cond_labels[i], f"{val:.2f}")
+            st.subheader("🧪 Predicted Biochar Properties")
+            for name, value in zip([
+                "Yield (%)", "pH", "Ash (%)", "Volatile matter (%)", "Nitrogen (%)",
+                "Fixed carbon (%)", "Carbon (%)", "H/C ratio", "O/C ratio"
+            ], opt_outputs):
+                st.write(f"**{name}:** {value:.2f}")
+        except Exception as e:
+            st.error(f"Optimization failed: {e}")
 
-        st.subheader("📈 Optimal Biochar Properties")
-        opt_out_cols = st.columns(3)
-        for i, (key, val) in enumerate(zip(opt_props, opt_outputs)):
-            opt_out_cols[i % 3].metric(key, f"{val:.2f}")
-
-# ---------- 底部注意说明 ----------
+st.markdown("---")
 st.markdown(
-    "<p style='font-size:14px; color:gray;'><b>Note:</b> This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.</p>",
-    unsafe_allow_html=True
+    "*Note: This reverse optimization process requires significant computation and may take 5 to 10 minutes. Please wait patiently.*"
 )
