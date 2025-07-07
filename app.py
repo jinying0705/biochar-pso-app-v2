@@ -103,7 +103,7 @@ if st.button("Optimize"):
         """
     st.markdown(styled_opt_conditions, unsafe_allow_html=True)
 
-    st.markdown("### 🧾 Ideal Biochar Properties")
+    st.markdown("### 🧾 Predicted Biochar Properties")
 
     styled_pred_output = ""
     for label, value in zip(prop_labels, predicted_outputs):
