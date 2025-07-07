@@ -75,7 +75,7 @@ with col2:
         row = st.columns(3)
         for j in range(3):
             label = weight_labels[i + j]
-            input_weights[label] = row[j].number_input(label, value=1.0, step=1.0)
+            input_weights[label] = row[j].number_input(label, value=0, step=1.0)
 
     if st.button("Optimize", key="optimize_btn"):
         biomass_inputs = [ash, volatile_matter, fixed_carbon, carbon, hydrogen, oxygen, nitrogen]
