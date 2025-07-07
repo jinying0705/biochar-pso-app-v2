@@ -114,3 +114,5 @@ with col2:
             """
         st.markdown(styled_pred_output, unsafe_allow_html=True)
 
+
+
