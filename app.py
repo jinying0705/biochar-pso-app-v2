@@ -84,7 +84,7 @@ if st.button("Optimize"):
 
     opt_conditions, predicted_outputs = optimize_conditions(biomass_inputs, weights_list)
 
-    st.markdown("### 🧪 Optimized Experimental Conditions")
+    st.markdown("### 🧪 Optimal Experimental Conditions")
 
     cond_labels = ["Highest temperature (°C)", "Heating rate (°C/min)", "Residence time (min)"]
     prop_labels = [
