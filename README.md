@@ -1,8 +1,8 @@
 # 🌱 The multi-task learning model used to predict the properties and optimize the design of biochar
 
 A Streamlit web application for real-time
-(1)**Forward prediction of biochar properties** based on 7 biomass properties and 3 pyrolysis conditions.
-(2)**Reverse optimization of biochar experimental conditions** based on ideal biochar properties using **Particle Swarm Optimization (PSO)**.
+1️⃣ **Forward prediction of biochar properties** based on 7 biomass properties and 3 pyrolysis conditions.
+2️⃣ **Reverse optimization of biochar experimental conditions** based on ideal biochar properties using **Particle Swarm Optimization (PSO)**.
 
 ---
 
