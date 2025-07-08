@@ -1,29 +1,31 @@
-# 🌱 The multi-task learning model used to predict the properties and customize the design of biochar
+# 🌱 The multi-task learning model used to predict the properties and optimize the design of biochar
 
-A Streamlit web application for **reverse optimization of biochar experimental conditions** based on ideal output properties using **Particle Swarm Optimization (PSO)**.
+A Streamlit web application for real-time
+(1)**Forward prediction of biochar properties** based on 7 biomass properties and 3 pyrolysis conditions.
+(2)**Reverse optimization of biochar experimental conditions** based on ideal biochar properties using **Particle Swarm Optimization (PSO)**.
 
 ---
 
 ## 🔍 Purpose
 
-This app helps **researchers and engineers** determine the best experimental parameters (e.g., temperature, heating rate, residence time) to produce biochar with desired properties, such as high yield, optimal pH, and specific elemental composition.
+This app not only helps **researchers and engineers** predict the properties of biochar in advance, but also determines the best experimental parameters (e.g., temperature, heating rate, residence time) to produce biochar with desired properties, such as high yield, optimal pH, and specific elemental composition.
 
 ---
 
 ## 📦 Features
 
+- 📊 Forward prediction: Real-time visualization of predicted outputs.
 - 🔁 Reverse design: Input desired **biochar properties** and assign weights.
 - ⚙️ PSO-based backend to search optimal **pyrolysis conditions**.
-- 📊 Real-time visualization of predicted outputs.
 - 🧠 Supports multi-objective optimization via custom weighting.
 
 ---
 
 ## 📂 File Structure
 
-biochar-pso-app-v2/
+biochar-slow pyrolysis-app/
 ├── app.py # Streamlit app entry point
-├── optimizer.py # PSO optimization logic
+├── predicter & optimizer.py # Forward prediction & Reverse optimization logic
 ├── requirements.txt # Python dependencies
 ├── README.md # Project documentation (this file)
 ├── *.json # Trained model and configuration files
@@ -35,8 +37,8 @@ biochar-pso-app-v2/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jinying0705/biochar-pso-app-v2.git
-   cd biochar-pso-app-v2
+   git clone https://github.com/jinying0705/biochar-slow pyrolysis-app.git
+   cd biochar-slow pyrolysis-app
 2. Install required packages:
    pip install -r requirements.txt
 3. Run the app:
