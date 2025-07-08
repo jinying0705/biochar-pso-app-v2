@@ -7,7 +7,7 @@ st.set_page_config(page_title="Biochar Design", layout="wide")
 # Set the top title
 st.markdown("""
 <div style='text-align: center; font-size: 34px; padding: 10px 0; font-weight: bold;'>
-    🌱 The multi-task learning model used to predict the properties and customize the design of biochar
+    🌱 The multi-task learning model used to predict the properties and optimize the design of biochar
 </div>
 """, unsafe_allow_html=True)
 
