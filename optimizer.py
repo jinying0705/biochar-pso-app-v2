@@ -71,7 +71,7 @@ def optimize_conditions(fixed_A_properties, weights):  # ← weights is of the l
 
     opt_conditions, _ = pso(
         lambda c: objective_function(c, fixed_A_properties, weights),
-        lb, ub, swarmsize=50, maxiter=50, omega=0.5, phip=2, phig=2
+        lb, ub, swarmsize=100, maxiter=50, omega=0.5, phip=2, phig=2
     )
 
     full_input = np.hstack((fixed_A_properties, opt_conditions))
