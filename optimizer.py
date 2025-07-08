@@ -5,7 +5,7 @@ from xgboost import XGBRegressor
 from pyswarm import pso
 
 # ======= Step 1: Load training data =======
-_data = pd.read_excel("确定6.0.xlsx")
+_data = pd.read_excel("Supplementary data.xlsx")
 X = _data.iloc[:, 0:10].values
 y = _data.iloc[:, 10:19].values
 
