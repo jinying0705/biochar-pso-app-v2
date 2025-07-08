@@ -59,7 +59,7 @@ def objective_function(conditions, fixed_A_properties, weights):
         if pred < output_limits[i][0] or pred > output_limits[i][1]:
             return 1e6
 
-        score += float(weight) * pred
+        score += float(weight) * pred_scaled
     return -score
 
 # ======= Step 7: Reverse Optimization with PSO =======
