@@ -36,7 +36,7 @@ output_limits = [
     (0, 1.29)        # O/C ratio
 ]
 
-# ======= Step 5: 正向预测函数 =======
+# ======= Step 5: Forward Prediction Function =======
 def predict_properties(input_features):
     input_scaled = scaler_X.transform([input_features])
     outputs = []
@@ -62,7 +62,7 @@ def objective_function(conditions, fixed_A_properties, weights):
         score += float(weight) * pred
     return -score
 
-# ======= Step 7: PSO优化 =======
+# ======= Step 7: Reverse Optimization with PSO =======
 def optimize_conditions(fixed_A_properties, weights):  # ← weights 是 list 类型
     weights = [float(w) for w in weights]  # ✅ 明确转 float
 
