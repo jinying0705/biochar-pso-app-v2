@@ -4,18 +4,18 @@ from optimizer import predict_properties, optimize_conditions
 
 st.set_page_config(page_title="Biochar Design", layout="wide")
 
-# 顶部标题
+# Set the top title
 st.markdown("""
 <div style='text-align: center; font-size: 34px; padding: 10px 0; font-weight: bold;'>
     🌱 The multi-task learning model used to predict the properties and customize the design of biochar
 </div>
 """, unsafe_allow_html=True)
 
-# 基础性质输入
+# Input Biomass Properties
 st.markdown("<h3>🧪 Biomass Properties (Dry Basis)</h3>", unsafe_allow_html=True)
 
 input_cols = st.columns(7)
-ash = input_cols[0].number_input("Ash (%)", min_value=10.0, step=0.01)
+ash = input_cols[0].number_input("Ash (%)", min_value=0.0, step=0.01)
 volatile_matter = input_cols[1].number_input("Volatile matter (%)", min_value=0.0, step=0.01)
 fixed_carbon = input_cols[2].number_input("Fixed carbon (%)", min_value=0.0, step=0.01)
 carbon = input_cols[3].number_input("Carbon (%)", min_value=0.0, step=0.01)
@@ -23,15 +23,15 @@ hydrogen = input_cols[4].number_input("Hydrogen (%)", min_value=0.0, step=0.01)
 oxygen = input_cols[5].number_input("Oxygen (%)", min_value=0.0, step=0.01)
 nitrogen = input_cols[6].number_input("Nitrogen (%)", min_value=0.0, step=0.01)
 
-# 分左右两列
+# Divide it into two sides, left and right
 col1, col2 = st.columns(2)
 
-# 🎯 左侧：正向预测
+# 🎯Left side: Forward prediction
 with col1:
     st.markdown("### 🎯 Forward Prediction")
     st.markdown("Enter the biomass properties above and pyrolysis conditions below to view the predicted biochar properties.")
 
-    highest_temp = st.number_input("Highest temperature (°C)", value=100.0, step=1.0)
+    highest_temp = st.number_input("Highest temperature (°C)", value=0.0, step=1.0)
     heating_rate = st.number_input("Heating rate (°C/min)", value=0.0, step=1.0)
     residence_time = st.number_input("Residence time (min)", value=0.0, step=1.0)
 
@@ -58,7 +58,7 @@ with col1:
             """
         st.markdown(styled_output, unsafe_allow_html=True)
 
-# 🔍 右侧：逆向优化
+# 🔍 Right side: Reverse optimization
 with col2:
     st.markdown("### 🔍 Reverse Optimization")
     st.markdown("Enter the biomass properties above and assign weights to the biochar properties below to design optimal experimental conditions for preparing your ideal biochar.")
