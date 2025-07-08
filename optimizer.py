@@ -46,7 +46,7 @@ def predict_properties(input_features):
         outputs.append(pred)
     return outputs
 
-# ======= Step 6: PSO目标函数（带惩罚） =======
+# ======= Step 6: Optimize the objective function with PSO (with penalties) =======
 def objective_function(conditions, fixed_A_properties, weights):
     full_input = np.hstack((fixed_A_properties, conditions))
     input_scaled = scaler_X.transform([full_input])
@@ -63,15 +63,15 @@ def objective_function(conditions, fixed_A_properties, weights):
     return -score
 
 # ======= Step 7: Reverse Optimization with PSO =======
-def optimize_conditions(fixed_A_properties, weights):  # ← weights 是 list 类型
-    weights = [float(w) for w in weights]  # ✅ 明确转 float
+def optimize_conditions(fixed_A_properties, weights):  # ← weights is of the list type
+    weights = [float(w) for w in weights]  # ✅ Explicitly convert to float type
 
     lb = [200, 1, 0]
     ub = [1000, 50, 240]
 
     opt_conditions, _ = pso(
         lambda c: objective_function(c, fixed_A_properties, weights),
-        lb, ub, swarmsize=50, maxiter=50
+        lb, ub, swarmsize=50, maxiter=50, omega=0.5, phip=2, phig=2
     )
 
     full_input = np.hstack((fixed_A_properties, opt_conditions))
@@ -83,5 +83,5 @@ def optimize_conditions(fixed_A_properties, weights):  # ← weights 是 list �
         pred = scaler.inverse_transform(pred_scaled.reshape(-1, 1))[0][0]
         outputs.append(pred)
 
-    return list(map(float, opt_conditions)), list(map(float, outputs))  # ✅ 显式返回 float 类型
+    return list(map(float, opt_conditions)), list(map(float, outputs))  # ✅ Explicitly return the float type
 
