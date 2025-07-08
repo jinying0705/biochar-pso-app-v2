@@ -1,4 +1,4 @@
-# 🌱 Biochar PSO App (Reverse Optimization)
+# 🌱 The multi-task learning model used to predict the properties and customize the design of biochar
 
 A Streamlit web application for **reverse optimization of biochar experimental conditions** based on ideal output properties using **Particle Swarm Optimization (PSO)**.
 
@@ -46,7 +46,7 @@ This app is deployed on Streamlit Cloud.
 You can launch it directly once GitHub is connected and authorized.
 
 🧠 Notes
-Some computations may take 5–10 minutes, depending on PSO iterations.
+Some computations may take 1–5 minutes, depending on PSO iterations.
 
 .json files store trained models; do not modify them manually.
 
