@@ -1,7 +1,7 @@
 # 🌱 The multi-task learning model used to predict the properties and optimize the design of biochar
 
 A Streamlit web application for real-time
-1️⃣ **Forward prediction of biochar properties** based on 7 biomass properties and 3 pyrolysis conditions.
+1️⃣ **Forward optimization of biochar properties** based on 7 biomass properties and 3 pyrolysis conditions.
 2️⃣ **Reverse optimization of biochar experimental conditions** based on ideal biochar properties using **Particle Swarm Optimization (PSO)**.
 
 ---
@@ -14,8 +14,8 @@ This app not only helps **researchers and engineers** predict the properties of 
 
 ## 📦 Features
 
-- 📊 Forward prediction: Real-time visualization of predicted outputs.
-- 🔁 Reverse design: Input desired **biochar properties** and assign weights.
+- 📊 Forward optimization: Real-time visualization of predicted outputs.
+- 🔁 Reverse optimization: Input desired **biochar properties** and assign weights.
 - ⚙️ PSO-based backend to search optimal **pyrolysis conditions**.
 - 🧠 Supports multi-objective optimization via custom weighting.
 
@@ -25,7 +25,7 @@ This app not only helps **researchers and engineers** predict the properties of 
 
 biochar-slow pyrolysis-app/
 ├── app.py # Streamlit app entry point
-├── predicter & optimizer.py # Forward prediction & Reverse optimization logic
+├── optimizer.py # Forward & Reverse optimization logic
 ├── requirements.txt # Python dependencies
 ├── README.md # Project documentation (this file)
 ├── *.json # Trained model and configuration files
@@ -55,7 +55,7 @@ Some computations may take 1–5 minutes, depending on PSO iterations.
 .xlsx files include biomass data for model input; you can update them with your own values.
 
 📮 Contact
-Maintainer: @jinying0705
+Maintainer: @jinying0705 @ylchen414
 Issues or questions? Feel free to open a GitHub issue.
 
 📜 License
