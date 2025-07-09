@@ -26,9 +26,9 @@ nitrogen = input_cols[6].number_input("Nitrogen (%)", min_value=0.0, step=0.01)
 # Divide it into two sides, left and right
 col1, col2 = st.columns(2)
 
-# 🎯Left side: Forward prediction
+# 🎯Left side: Forward Optimization
 with col1:
-    st.markdown("### 🎯 Forward Prediction")
+    st.markdown("### 🎯 Forward Optimization")
     st.markdown("Enter the biomass properties above and pyrolysis conditions below to view the predicted biochar properties.")
 
     highest_temp = st.number_input("Highest temperature (°C)", value=0.0, step=1.0)
